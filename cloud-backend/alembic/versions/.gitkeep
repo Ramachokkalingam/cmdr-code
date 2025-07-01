@@ -1,0 +1,21 @@
+"""empty message
+
+Revision ID: ${up_revision}
+Revises: 
+Create Date: ${create_date}
+
+"""
+from alembic import op
+import sqlalchemy as sa
+
+# revision identifiers
+revision = '${up_revision}'
+down_revision = None
+branch_labels = None
+depends_on = None
+
+def upgrade():
+    pass
+
+def downgrade():
+    pass

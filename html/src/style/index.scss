@@ -1,0 +1,49 @@
+@import './app.scss';
+
+html,
+body {
+  height: 100%;
+  min-height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.app-container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+#terminal-container {
+  width: 100%;
+  flex: 1;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  min-height: 0; /* Important for flex child to shrink */
+  
+  .terminal {
+    padding: 0;
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    
+    /* Ensure xterm takes full width */
+    .xterm {
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+    
+    .xterm .xterm-viewport {
+      width: 100% !important;
+    }
+    
+    .xterm .xterm-screen {
+      width: 100% !important;
+    }
+  }
+}

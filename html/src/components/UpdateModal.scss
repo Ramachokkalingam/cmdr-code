@@ -1,0 +1,361 @@
+.update-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    backdrop-filter: blur(4px);
+}
+
+.update-modal {
+    background: #1e1e1e;
+    border-radius: 12px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow: hidden;
+    color: #ffffff;
+    border: 1px solid #333;
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 24px 16px;
+        border-bottom: 1px solid #333;
+
+        h2 {
+            margin: 0;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #888;
+            cursor: pointer;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s;
+
+            &:hover {
+                color: #ffffff;
+            }
+        }
+    }
+
+    .modal-content {
+        padding: 20px 24px;
+        max-height: 400px;
+        overflow-y: auto;
+
+        .version-info {
+            margin-bottom: 20px;
+
+            p {
+                margin: 8px 0;
+                font-size: 0.95rem;
+                color: #ccc;
+
+                strong {
+                    color: #ffffff;
+                }
+            }
+        }
+
+        .release-notes {
+            margin-bottom: 20px;
+
+            h3 {
+                margin: 0 0 12px 0;
+                font-size: 1.1rem;
+                font-weight: 600;
+                color: #ffffff;
+            }
+
+            .notes-content {
+                background: #2a2a2a;
+                border-radius: 8px;
+                padding: 16px;
+                border: 1px solid #444;
+                max-height: 200px;
+                overflow-y: auto;
+
+                p {
+                    margin: 6px 0;
+                    font-size: 0.9rem;
+                    line-height: 1.4;
+                    color: #ddd;
+
+                    &:first-child {
+                        margin-top: 0;
+                    }
+
+                    &:last-child {
+                        margin-bottom: 0;
+                    }
+                }
+            }
+        }
+
+        .error-message {
+            margin-bottom: 20px;
+            padding: 12px 16px;
+            background: #4a1a1a;
+            border: 1px solid #ff4444;
+            border-radius: 8px;
+
+            p {
+                margin: 0;
+                color: #ff6666;
+                font-size: 0.9rem;
+            }
+        }
+
+        .download-progress {
+            margin-bottom: 20px;
+
+            .progress-container {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                margin-bottom: 12px;
+
+                .progress-bar {
+                    flex: 1;
+                    height: 8px;
+                    background: #333;
+                    border-radius: 4px;
+                    overflow: hidden;
+                    position: relative;
+
+                    .progress-fill {
+                        height: 100%;
+                        background: linear-gradient(90deg, #0066cc, #0088ff);
+                        transition: width 0.3s ease;
+                        border-radius: 4px;
+                    }
+                }
+
+                .progress-text {
+                    font-size: 0.9rem;
+                    font-weight: 600;
+                    color: #0088ff;
+                    min-width: 40px;
+                    text-align: right;
+                }
+            }
+
+            p {
+                margin: 0;
+                font-size: 0.9rem;
+                color: #ccc;
+                text-align: center;
+            }
+        }
+
+        .installing {
+            margin-bottom: 20px;
+            text-align: center;
+
+            .spinner {
+                width: 32px;
+                height: 32px;
+                border: 3px solid #333;
+                border-top: 3px solid #0088ff;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+                margin: 0 auto 16px;
+            }
+
+            p {
+                margin: 0;
+                font-size: 0.9rem;
+                color: #ccc;
+            }
+        }
+    }
+
+    .modal-actions {
+        padding: 16px 24px 24px;
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+        border-top: 1px solid #333;
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-width: 100px;
+
+            &:disabled {
+                opacity: 0.6;
+                cursor: not-allowed;
+            }
+
+            &.primary {
+                background: #0066cc;
+                color: #ffffff;
+
+                &:hover:not(:disabled) {
+                    background: #0077dd;
+                    transform: translateY(-1px);
+                }
+
+                &:active {
+                    transform: translateY(0);
+                }
+            }
+
+            &.secondary {
+                background: #333;
+                color: #ccc;
+                border: 1px solid #555;
+
+                &:hover:not(:disabled) {
+                    background: #444;
+                    color: #ffffff;
+                }
+            }
+        }
+    }
+
+    .mandatory-notice {
+        padding: 16px 24px 0;
+        text-align: center;
+
+        p {
+            margin: 0;
+            font-size: 0.85rem;
+            color: #ffaa00;
+            background: rgba(255, 170, 0, 0.1);
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 170, 0, 0.2);
+        }
+    }
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+// Dark theme adjustments
+@media (prefers-color-scheme: light) {
+    .update-modal {
+        background: #ffffff;
+        color: #333333;
+        border-color: #ddd;
+
+        .modal-header {
+            border-bottom-color: #ddd;
+
+            h2 {
+                color: #333333;
+            }
+
+            .close-btn {
+                color: #666;
+
+                &:hover {
+                    color: #333;
+                }
+            }
+        }
+
+        .modal-content {
+            .version-info p {
+                color: #666;
+
+                strong {
+                    color: #333;
+                }
+            }
+
+            .release-notes {
+                h3 {
+                    color: #333;
+                }
+
+                .notes-content {
+                    background: #f5f5f5;
+                    border-color: #ddd;
+
+                    p {
+                        color: #555;
+                    }
+                }
+            }
+
+            .error-message {
+                background: #ffeaea;
+                border-color: #ff4444;
+
+                p {
+                    color: #cc0000;
+                }
+            }
+
+            .download-progress {
+                .progress-container .progress-bar {
+                    background: #eee;
+                }
+
+                p {
+                    color: #666;
+                }
+            }
+
+            .installing {
+                .spinner {
+                    border-color: #eee;
+                    border-top-color: #0088ff;
+                }
+
+                p {
+                    color: #666;
+                }
+            }
+        }
+
+        .modal-actions {
+            border-top-color: #ddd;
+
+            .secondary {
+                background: #f5f5f5;
+                color: #666;
+                border-color: #ddd;
+
+                &:hover:not(:disabled) {
+                    background: #eeeeee;
+                    color: #333;
+                }
+            }
+        }
+
+        .mandatory-notice p {
+            color: #b8860b;
+            background: rgba(184, 134, 11, 0.1);
+            border-color: rgba(184, 134, 11, 0.2);
+        }
+    }
+}

@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  # Existing CMDR service with cloud integration
+  cmdr:
+    build: .
+    ports:
+      - "6969:6969"
+    environment:
+      - CLOUD_BACKEND_URL=http://cloud-backend:8000
+      - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID}
+    volumes:
+      - .:/app
+    depends_on:
+      - cloud-backend
+      - postgres
+
+  # Python cloud backend
+  cloud-backend:
+    build: ./cloud-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://cmdr:password@postgres:5432/cmdr
+      - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID}
+      - FIREBASE_SERVICE_ACCOUNT_KEY=/app/service-account-key.json
+      - SECRET_KEY=${SECRET_KEY:-your-secret-key-change-in-production}
+      - ALLOWED_ORIGINS=["http://localhost:6969"]
+    volumes:
+      - ./cloud-backend:/app
+      # Mount Firebase service account key
+      - ${FIREBASE_SERVICE_ACCOUNT_KEY_PATH}:/app/service-account-key.json:ro
+    depends_on:
+      - postgres
+
+  # PostgreSQL database
+  postgres:
+    image: postgres:13
+    environment:
+      - POSTGRES_DB=cmdr
+      - POSTGRES_USER=cmdr
+      - POSTGRES_PASSWORD=password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

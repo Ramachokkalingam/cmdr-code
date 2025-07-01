@@ -1,0 +1,1 @@
+cd /home/ram/project/cmdr/html && NODE_ENV=production npx webpack --mode=production && npx gulp

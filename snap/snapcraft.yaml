@@ -1,0 +1,49 @@
+name: cmdr
+adopt-info: cmdr
+summary: Share your terminal over the web
+description: |
+ cmdr is a simple command-line tool for sharing terminal over the web
+
+grade: stable
+confinement: classic
+base: core20
+compression: lzo
+
+license: MIT
+
+assumes:
+  - command-chain
+
+apps:
+  cmdr:
+    command: usr/bin/cmdr
+    command-chain: 
+      - bin/homeishome-launch       
+
+parts:
+  cmdr:
+    source: https://github.com/tsl0922/cmdr
+    source-type: git
+    plugin: cmake
+    cmake-parameters:
+      - -DCMAKE_INSTALL_PREFIX=/usr
+    build-environment:
+      - LDFLAGS: "-pthread"
+      
+    override-pull: |
+      snapcraftctl pull
+      snapcraftctl set-version "$(git describe --tags | sed 's/^v//' | cut -d "-" -f1)"
+      
+    build-packages:
+      - build-essential 
+      - libjson-c-dev 
+      - libwebsockets-dev
+      
+    stage-packages:
+      - libjson-c4
+      - libwebsockets15
+      
+  homeishome-launch:
+    plugin: nil
+    stage-snaps:
+      - homeishome-launch  

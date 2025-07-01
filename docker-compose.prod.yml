@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  # CMDR terminal server
+  cmdr:
+    build: .
+    ports:
+      - "6969:6969"
+    environment:
+      - CLOUD_BACKEND_URL=http://cloud-backend:8000
+      - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID}
+    volumes:
+      # Mount only necessary runtime files in production
+      - ./src:/app/src:ro
+      - ./build:/app/build:ro
+    depends_on:
+      - cloud-backend
+      - postgres
+    restart: unless-stopped
+
+  # Python cloud backend
+  cloud-backend:
+    build: ./cloud-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://cmdr:${POSTGRES_PASSWORD}@postgres:5432/cmdr
+      - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID}
+      - FIREBASE_SERVICE_ACCOUNT_KEY=/app/service-account-key.json
+      - SECRET_KEY=${SECRET_KEY}
+      - ALLOWED_ORIGINS=["https://${DOMAIN}", "http://localhost:6969"]
+      - MAX_FILE_SIZE=${MAX_FILE_SIZE:-104857600}
+      - UPLOAD_DIR=/app/uploads
+      - RELEASES_DIR=/app/releases
+    volumes:
+      # Production service account key
+      - ${FIREBASE_SERVICE_ACCOUNT_KEY_PATH}:/app/service-account-key.json:ro
+      # Persistent file storage
+      - cmdr_uploads:/app/uploads
+      - ./releases:/app/releases
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  # PostgreSQL database
+  postgres:
+    image: postgres:13
+    environment:
+      - POSTGRES_DB=cmdr
+      - POSTGRES_USER=cmdr
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    # Don't expose port in production for security
+
+  # Nginx reverse proxy (optional)
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - cmdr
+      - cloud-backend
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  cmdr_uploads:

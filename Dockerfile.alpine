@@ -1,0 +1,15 @@
+FROM alpine
+
+ARG TARGETARCH
+
+# Dependencies
+RUN apk add --no-cache bash tini
+
+# Application
+COPY ./dist/${TARGETARCH}/cmdr /usr/bin/cmdr
+
+EXPOSE 6969
+WORKDIR /root
+
+ENTRYPOINT ["/sbin/tini", "--"]
+CMD ["cmdr", "-W", "bash"]

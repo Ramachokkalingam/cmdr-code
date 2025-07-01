@@ -1,0 +1,322 @@
+name: Build and Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release'
+        required: true
+        default: '1.0.0'
+      mandatory:
+        description: 'Is this a mandatory update?'
+        type: boolean
+        default: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # Build native applications
+  build-native:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            artifact: cmdr-linux.AppImage
+          - os: windows-latest
+            platform: windows
+            artifact: cmdr-windows.exe
+          - os: macos-latest
+            platform: macos
+            artifact: cmdr-macos.dmg
+    
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+          fi
+        shell: bash
+        
+      - name: Install dependencies (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake build-essential libuv1-dev libwebsockets-dev zlib1g-dev libssl-dev libjson-c-dev libcurl4-openssl-dev
+          
+      - name: Install dependencies (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew install cmake libuv libwebsockets json-c curl
+          
+      - name: Install dependencies (Windows)
+        if: matrix.os == 'windows-latest'
+        uses: lukka/get-cmake@latest
+        
+      - name: Update version in CMakeLists.txt
+        run: |
+          sed -i 's/project(cmdr VERSION [0-9.]*/project(cmdr VERSION ${{ steps.version.outputs.version }}/' CMakeLists.txt
+        shell: bash
+        
+      - name: Build
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release
+          cmake --build . --config Release
+          
+      - name: Package (Linux - AppImage)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          # Install linuxdeploy
+          wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+          chmod +x linuxdeploy-x86_64.AppImage
+          
+          # Create AppDir structure
+          mkdir -p AppDir/usr/bin
+          cp build/cmdr AppDir/usr/bin/
+          
+          # Create .desktop file
+          cat > AppDir/cmdr.desktop << EOF
+          [Desktop Entry]
+          Type=Application
+          Name=CMDR
+          Exec=cmdr
+          Icon=cmdr
+          Categories=Utility;
+          EOF
+          
+          # Create AppImage
+          ./linuxdeploy-x86_64.AppImage --appdir AppDir --output appimage
+          mv CMDR-*.AppImage ${{ matrix.artifact }}
+          
+      - name: Package (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          copy build/Release/cmdr.exe ${{ matrix.artifact }}
+          
+      - name: Package (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          # Create .app bundle
+          mkdir -p CMDR.app/Contents/MacOS
+          cp build/cmdr CMDR.app/Contents/MacOS/
+          
+          # Create Info.plist
+          cat > CMDR.app/Contents/Info.plist << EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>CFBundleExecutable</key>
+              <string>cmdr</string>
+              <key>CFBundleIdentifier</key>
+              <string>com.cmdr.terminal</string>
+              <key>CFBundleName</key>
+              <string>CMDR</string>
+              <key>CFBundleVersion</key>
+              <string>${{ steps.version.outputs.version }}</string>
+          </dict>
+          </plist>
+          EOF
+          
+          # Create DMG
+          hdiutil create -srcfolder CMDR.app -volname "CMDR ${{ steps.version.outputs.version }}" ${{ matrix.artifact }}
+          
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.platform }}-build
+          path: ${{ matrix.artifact }}
+
+  # Build web frontend
+  build-web:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: html/package-lock.json
+          
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+          fi
+          
+      - name: Update package.json version
+        working-directory: html
+        run: |
+          npm version ${{ steps.version.outputs.version }} --no-git-tag-version
+          
+      - name: Install dependencies
+        working-directory: html
+        run: npm ci
+        
+      - name: Build
+        working-directory: html
+        run: npm run build
+        
+      - name: Create web package
+        run: |
+          cd html
+          tar -czf ../cmdr-${{ steps.version.outputs.version }}-web.tar.gz dist/
+          
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-build
+          path: cmdr-${{ steps.version.outputs.version }}-web.tar.gz
+
+  # Create release
+  create-release:
+    needs: [build-native, build-web]
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+            echo "mandatory=${{ github.event.inputs.mandatory }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+            echo "mandatory=false" >> $GITHUB_OUTPUT
+          fi
+          
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+          
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          
+      - name: Create release structure
+        run: |
+          mkdir -p releases/${{ steps.version.outputs.version }}
+          
+          # Move artifacts to release directory
+          mv artifacts/linux-build/* releases/${{ steps.version.outputs.version }}/cmdr-${{ steps.version.outputs.version }}-linux.AppImage
+          mv artifacts/windows-build/* releases/${{ steps.version.outputs.version }}/cmdr-${{ steps.version.outputs.version }}-windows.exe
+          mv artifacts/macos-build/* releases/${{ steps.version.outputs.version }}/cmdr-${{ steps.version.outputs.version }}-macos.dmg
+          mv artifacts/web-build/* releases/${{ steps.version.outputs.version }}/
+          
+      - name: Generate release config
+        run: |
+          python3 << EOF
+          import json
+          import os
+          from pathlib import Path
+          
+          version = "${{ steps.version.outputs.version }}"
+          mandatory = "${{ steps.version.outputs.mandatory }}" == "true"
+          
+          release_dir = Path(f"releases/{version}")
+          
+          config = {
+              "latest_version": version,
+              "releases": {
+                  version: {
+                      "mandatory": mandatory,
+                      "release_notes": f"CMDR v{version}\\n• See GitHub release notes for details",
+                      "files": {}
+                  }
+              }
+          }
+          
+          # Calculate file sizes
+          platforms = {
+              "linux": f"cmdr-{version}-linux.AppImage",
+              "windows": f"cmdr-{version}-windows.exe", 
+              "macos": f"cmdr-{version}-macos.dmg",
+              "web": f"cmdr-{version}-web.tar.gz"
+          }
+          
+          for platform, filename in platforms.items():
+              file_path = release_dir / filename
+              if file_path.exists():
+                  size = file_path.stat().st_size
+                  config["releases"][version]["files"][platform] = {
+                      "filename": filename,
+                      "size": size,
+                      "checksum": f"sha256_placeholder_{platform}"
+                  }
+          
+          # Save config
+          config_path = Path("releases/release-config.json")
+          with open(config_path, 'w') as f:
+              json.dump(config, f, indent=2)
+          
+          print(f"Created release config for version {version}")
+          EOF
+          
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: CMDR v${{ steps.version.outputs.version }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            releases/${{ steps.version.outputs.version }}/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Upload release config artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-config
+          path: releases/release-config.json
+
+  # Deploy to production (optional)
+  deploy:
+    needs: create-release
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Download release config
+        uses: actions/download-artifact@v4
+        with:
+          name: release-config
+          path: releases/
+          
+      - name: Deploy to production server
+        run: |
+          echo "Would deploy to production server here"
+          echo "Update release config on server"
+          echo "Restart backend services"
+          # Add your deployment steps here
