@@ -1,0 +1,12 @@
+export { AppearanceTab } from './AppearanceTab';
+export { TerminalTab } from './TerminalTab';
+export { UITab } from './UITab';
+export { KeyboardTab } from './KeyboardTab';
+export { ConnectionTab } from './ConnectionTab';
+export { PerformanceTab } from './PerformanceTab';
+export { SecurityTab } from './SecurityTab';
+export { AITab } from './AITab';
+export { SessionTab } from './SessionTab';
+export { AdvancedTab } from './AdvancedTab';
+export { AccessibilityTab } from './AccessibilityTab';
+export { AboutTab } from './AboutTab';

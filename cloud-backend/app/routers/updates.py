@@ -7,6 +7,9 @@ import json
 import hashlib
 from typing import Optional
 import semver
+import subprocess
+import asyncio
+from datetime import datetime
 
 router = APIRouter(prefix="/version", tags=["updates"])
 
@@ -284,3 +287,161 @@ async def get_current_version():
         "build_date": "2025-07-01T00:00:00Z",
         "git_commit": "initial"
     }
+
+@router.post("/git/update")
+async def git_update(
+    update_request: dict,
+    current_user: Optional[User] = Depends(get_current_user)
+):
+    """Perform git update from GitHub repository"""
+    try:
+        action = update_request.get("action", "pull")
+        repository = update_request.get("repository", "origin")
+        branch = update_request.get("branch", "main")
+        
+        # Get the project root directory (assuming the script is in cloud-backend/app/routers)
+        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
+        
+        # Change to project directory
+        original_cwd = os.getcwd()
+        os.chdir(project_root)
+        
+        result = {
+            "success": False,
+            "message": "",
+            "output": "",
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        try:
+            if action == "pull":
+                # First, fetch the latest changes
+                fetch_process = subprocess.run(
+                    ["git", "fetch", repository],
+                    capture_output=True,
+                    text=True,
+                    timeout=30
+                )
+                
+                if fetch_process.returncode != 0:
+                    result["message"] = f"Git fetch failed: {fetch_process.stderr}"
+                    return result
+                
+                # Then pull the changes
+                pull_process = subprocess.run(
+                    ["git", "pull", repository, branch],
+                    capture_output=True,
+                    text=True,
+                    timeout=60
+                )
+                
+                if pull_process.returncode == 0:
+                    result["success"] = True
+                    result["message"] = "Git update successful"
+                    result["output"] = pull_process.stdout
+                    
+                    # Also get the latest commit info
+                    commit_process = subprocess.run(
+                        ["git", "log", "-1", "--pretty=format:%H %s"],
+                        capture_output=True,
+                        text=True,
+                        timeout=10
+                    )
+                    
+                    if commit_process.returncode == 0:
+                        result["latest_commit"] = commit_process.stdout
+                        
+                else:
+                    result["message"] = f"Git pull failed: {pull_process.stderr}"
+                    result["output"] = pull_process.stdout
+                    
+            else:
+                result["message"] = f"Unsupported action: {action}"
+                
+        except subprocess.TimeoutExpired:
+            result["message"] = "Git operation timed out"
+        except Exception as e:
+            result["message"] = f"Git operation failed: {str(e)}"
+        finally:
+            # Always restore the original working directory
+            os.chdir(original_cwd)
+        
+        return result
+        
+    except Exception as e:
+        print(f"Error in git update: {e}")
+        raise HTTPException(status_code=500, detail=f"Git update failed: {str(e)}")
+
+@router.get("/git/status")
+async def git_status(current_user: Optional[User] = Depends(get_current_user)):
+    """Get current git status and latest commit info"""
+    try:
+        # Get the project root directory
+        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
+        
+        # Change to project directory
+        original_cwd = os.getcwd()
+        os.chdir(project_root)
+        
+        result = {
+            "current_branch": "",
+            "latest_commit": "",
+            "status": "",
+            "remote_url": "",
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        try:
+            # Get current branch
+            branch_process = subprocess.run(
+                ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            if branch_process.returncode == 0:
+                result["current_branch"] = branch_process.stdout.strip()
+            
+            # Get latest commit
+            commit_process = subprocess.run(
+                ["git", "log", "-1", "--pretty=format:%H %s (%cr)"],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            if commit_process.returncode == 0:
+                result["latest_commit"] = commit_process.stdout.strip()
+            
+            # Get git status
+            status_process = subprocess.run(
+                ["git", "status", "--porcelain"],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            if status_process.returncode == 0:
+                result["status"] = "clean" if not status_process.stdout.strip() else "modified"
+            
+            # Get remote URL
+            remote_process = subprocess.run(
+                ["git", "config", "--get", "remote.origin.url"],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            if remote_process.returncode == 0:
+                result["remote_url"] = remote_process.stdout.strip()
+                
+        except subprocess.TimeoutExpired:
+            result["error"] = "Git operation timed out"
+        except Exception as e:
+            result["error"] = f"Git operation failed: {str(e)}"
+        finally:
+            # Always restore the original working directory
+            os.chdir(original_cwd)
+        
+        return result
+        
+    except Exception as e:
+        print(f"Error getting git status: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get git status: {str(e)}")

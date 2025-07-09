@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CMDR - AI-Powered Terminal in Your Browser</title>
+    <meta name="description" content="Experience the future of command-line interfaces with CMDR - an AI-powered terminal that runs directly in your browser with smart session management.">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <i class="fas fa-terminal"></i>
+                <span>CMDR</span>
+            </div>
+            <div class="nav-menu" id="nav-menu">
+                <a href="#features" class="nav-link">Features</a>
+                <a href="#demo" class="nav-link">Demo</a>
+                <a href="#docs" class="nav-link">Docs</a>
+                <a href="#download" class="nav-link">Download</a>
+                <a href="https://github.com/your-repo/cmdr" class="nav-link" target="_blank">
+                    <i class="fab fa-github"></i>
+                </a>
+            </div>
+            <div class="nav-toggle" id="nav-toggle">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-container">
+            <div class="hero-content">
+                <h1 class="hero-title">
+                    <span class="gradient-text">AI-Powered Terminal</span>
+                    <br>in Your Browser
+                </h1>
+                <p class="hero-description">
+                    Experience the future of command-line interfaces with intelligent assistance, 
+                    persistent sessions, and seamless browser integration. No installation required.
+                </p>
+                <div class="hero-buttons">
+                    <a href="#demo" class="btn btn-primary">
+                        <i class="fas fa-play"></i>
+                        Try Live Demo
+                    </a>
+                    <a href="#download" class="btn btn-secondary">
+                        <i class="fas fa-download"></i>
+                        Get Started
+                    </a>
+                </div>
+                <div class="hero-features">
+                    <div class="feature-tag">
+                        <i class="fas fa-brain"></i>
+                        AI-Powered
+                    </div>
+                    <div class="feature-tag">
+                        <i class="fas fa-globe"></i>
+                        Browser-Based
+                    </div>
+                    <div class="feature-tag">
+                        <i class="fas fa-save"></i>
+                        Session Persistence
+                    </div>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="terminal-window">
+                    <div class="terminal-header">
+                        <div class="terminal-buttons">
+                            <span class="btn-close"></span>
+                            <span class="btn-minimize"></span>
+                            <span class="btn-maximize"></span>
+                        </div>
+                        <div class="terminal-title">CMDR Terminal</div>
+                        <div class="ai-indicator">
+                            <i class="fas fa-brain"></i>
+                            AI Active
+                        </div>
+                    </div>
+                    <div class="terminal-content">
+                        <div class="terminal-line">
+                            <span class="prompt">user@cmdr:~$</span>
+                            <span class="command" id="typed-command"></span>
+                            <span class="cursor">|</span>
+                        </div>
+                        <div class="ai-suggestion" id="ai-suggestion">
+                            <i class="fas fa-lightbulb"></i>
+                            <span>AI suggests: Use 'ls -la' to see hidden files</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="container">
+            <div class="section-header">
+                <h2>Powerful Features</h2>
+                <p>Everything you need for a modern terminal experience</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <h3>AI-Powered Assistance</h3>
+                    <p>Get intelligent command suggestions, error explanations, and automated solutions powered by advanced AI.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-globe-americas"></i>
+                    </div>
+                    <h3>Browser Native</h3>
+                    <p>No downloads or installations. Access your terminal from any device with a modern web browser.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-save"></i>
+                    </div>
+                    <h3>Session Persistence</h3>
+                    <p>Your sessions are automatically saved and restored. Pick up exactly where you left off.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-share-alt"></i>
+                    </div>
+                    <h3>Easy Sharing</h3>
+                    <p>Share terminal sessions with teammates instantly. Perfect for debugging and collaboration.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-palette"></i>
+                    </div>
+                    <h3>Customizable Interface</h3>
+                    <p>Multiple themes, font options, and layouts. Make your terminal truly yours.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3>Secure & Private</h3>
+                    <p>End-to-end encryption for all sessions. Your data stays private and secure.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Demo Section -->
+    <section id="demo" class="demo">
+        <div class="container">
+            <div class="section-header">
+                <h2>See CMDR in Action</h2>
+                <p>Experience the power of AI-assisted terminal operations</p>
+            </div>
+            <div class="demo-container">
+                <div class="demo-terminal">
+                    <div class="terminal-header">
+                        <div class="terminal-buttons">
+                            <span class="btn-close"></span>
+                            <span class="btn-minimize"></span>
+                            <span class="btn-maximize"></span>
+                        </div>
+                        <div class="terminal-title">CMDR Demo Terminal</div>
+                    </div>
+                    <div class="terminal-body">
+                        <div class="demo-content" id="demo-content">
+                            <div class="terminal-line">
+                                <span class="prompt">demo@cmdr:~$</span>
+                                <span class="command">ls</span>
+                            </div>
+                            <div class="output">
+                                documents  downloads  projects  scripts
+                            </div>
+                            <div class="terminal-line">
+                                <span class="prompt">demo@cmdr:~$</span>
+                                <span class="command">cd projects</span>
+                            </div>
+                            <div class="ai-suggestion active">
+                                <i class="fas fa-robot"></i>
+                                <span>AI: I notice you're navigating to projects. Would you like me to show you the recent files?</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="demo-features">
+                    <div class="demo-feature">
+                        <div class="demo-icon">
+                            <i class="fas fa-magic"></i>
+                        </div>
+                        <h4>Smart Autocomplete</h4>
+                        <p>AI learns your patterns and suggests relevant commands</p>
+                    </div>
+                    <div class="demo-feature">
+                        <div class="demo-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <h4>Error Resolution</h4>
+                        <p>Automatically suggests fixes for common errors</p>
+                    </div>
+                    <div class="demo-feature">
+                        <div class="demo-icon">
+                            <i class="fas fa-history"></i>
+                        </div>
+                        <h4>Command History</h4>
+                        <p>Intelligent history search and command replay</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Getting Started Section -->
+    <section id="docs" class="getting-started">
+        <div class="container">
+            <div class="section-header">
+                <h2>Get Started in Minutes</h2>
+                <p>Three simple ways to start using CMDR</p>
+            </div>
+            <div class="steps-container">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h3>Try Online</h3>
+                        <p>Start immediately with our hosted version</p>
+                        <a href="#" class="step-link">Open Web Terminal <i class="fas fa-external-link-alt"></i></a>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h3>Self-Host</h3>
+                        <p>Deploy on your own infrastructure</p>
+                        <div class="code-block">
+                            <code>docker run -p 8080:8080 cmdr/terminal</code>
+                            <button class="copy-btn" onclick="copyToClipboard(this)">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h3>Install Locally</h3>
+                        <p>Download for your operating system</p>
+                        <div class="download-buttons">
+                            <a href="#" class="download-btn">
+                                <i class="fab fa-linux"></i>
+                                Linux
+                            </a>
+                            <a href="#" class="download-btn">
+                                <i class="fab fa-windows"></i>
+                                Windows
+                            </a>
+                            <a href="#" class="download-btn">
+                                <i class="fab fa-apple"></i>
+                                macOS
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Download Section -->
+    <section id="download" class="download">
+        <div class="container">
+            <div class="download-content">
+                <h2>Ready to Transform Your Terminal Experience?</h2>
+                <p>Join thousands of developers already using CMDR to supercharge their workflow</p>
+                <div class="download-options">
+                    <a href="#" class="btn btn-primary btn-large">
+                        <i class="fas fa-rocket"></i>
+                        Start Free Trial
+                    </a>
+                    <a href="https://github.com/your-repo/cmdr" class="btn btn-secondary btn-large">
+                        <i class="fab fa-github"></i>
+                        View on GitHub
+                    </a>
+                </div>
+                <div class="download-info">
+                    <div class="info-item">
+                        <i class="fas fa-check"></i>
+                        <span>Free for personal use</span>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-check"></i>
+                        <span>Open source</span>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-check"></i>
+                        <span>No credit card required</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="footer-brand">
+                        <i class="fas fa-terminal"></i>
+                        <span>CMDR</span>
+                    </div>
+                    <p>The AI-powered terminal that runs in your browser</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-github"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-discord"></i></a>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h4>Product</h4>
+                    <ul>
+                        <li><a href="#features">Features</a></li>
+                        <li><a href="#demo">Demo</a></li>
+                        <li><a href="#download">Download</a></li>
+                        <li><a href="#">Pricing</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Resources</h4>
+                    <ul>
+                        <li><a href="#">Documentation</a></li>
+                        <li><a href="#">API Reference</a></li>
+                        <li><a href="#">Examples</a></li>
+                        <li><a href="#">Community</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Support</h4>
+                    <ul>
+                        <li><a href="#">Help Center</a></li>
+                        <li><a href="#">Contact</a></li>
+                        <li><a href="#">Bug Reports</a></li>
+                        <li><a href="#">Feature Requests</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 CMDR. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+</body>
+</html>

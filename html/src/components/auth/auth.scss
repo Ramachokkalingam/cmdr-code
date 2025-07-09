@@ -3,100 +3,247 @@
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  background: #0f172a;
+  background-image: 
+    radial-gradient(ellipse at top, rgba(99, 102, 241, 0.15), transparent),
+    radial-gradient(ellipse at bottom, rgba(139, 92, 246, 0.1), transparent);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    linear-gradient(45deg, transparent 30%, rgba(99, 102, 241, 0.03) 50%, transparent 70%),
+    linear-gradient(-45deg, transparent 30%, rgba(139, 92, 246, 0.03) 50%, transparent 70%);
+  animation: shimmer 8s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
 }
 
 .auth-card {
-  background: white;
-  border-radius: 12px;
-  padding: 2rem;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-  max-width: 400px;
+  background: #1e293b;
+  border: 1px solid #475569;
+  border-radius: 16px;
+  padding: 3rem 2rem;
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(99, 102, 241, 0.1);
+  max-width: 450px;
   width: 100%;
   margin: 1rem;
   text-align: center;
+  position: relative;
+  z-index: 1;
+  backdrop-filter: blur(10px);
 }
 
 .auth-header {
-  margin-bottom: 2rem;
+  margin-bottom: 2.5rem;
+  
+  .fas.fa-terminal {
+    font-size: 3rem;
+    color: #6366f1;
+    margin-bottom: 1rem;
+    display: block;
+    animation: glow 2s ease-in-out infinite alternate;
+    text-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
+    
+    // Fallback for when Font Awesome doesn't load
+    &::before {
+      content: "⬛";
+      font-family: inherit;
+      font-size: 1em;
+    }
+  }
+  
+  // Alternative CSS-only terminal icon if Font Awesome fails
+  .terminal-icon-fallback {
+    width: 48px;
+    height: 32px;
+    background: #6366f1;
+    border-radius: 4px;
+    margin: 0 auto 1rem;
+    position: relative;
+    animation: glow 2s ease-in-out infinite alternate;
+    
+    &::before {
+      content: '';
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      right: 4px;
+      bottom: 4px;
+      background: #1e293b;
+      border-radius: 2px;
+    }
+    
+    &::after {
+      content: '>';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #06b6d4;
+      font-family: monospace;
+      font-size: 16px;
+      font-weight: bold;
+      z-index: 1;
+    }
+  }
   
   h1 {
-    margin: 0 0 0.5rem 0;
-    font-size: 2rem;
-    color: #333;
-    font-weight: 600;
+    margin: 0 0 0.75rem 0;
+    font-size: 2.25rem;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 700;
+    letter-spacing: -0.02em;
   }
   
   p {
     margin: 0;
-    color: #666;
-    font-size: 1rem;
+    color: #cbd5e1;
+    font-size: 1.125rem;
+    font-weight: 400;
+  }
+}
+
+@keyframes glow {
+  from {
+    color: #6366f1;
+    text-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
+  }
+  to {
+    color: #8b5cf6;
+    text-shadow: 0 0 20px rgba(139, 92, 246, 0.8);
   }
 }
 
 .auth-content {
-  margin-bottom: 2rem;
+  margin-bottom: 2.5rem;
 }
 
 .google-signin-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.75rem;
+  gap: 1rem;
   width: 100%;
-  padding: 0.875rem 1.5rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  background: white;
-  color: #333;
+  padding: 1rem 1.5rem;
+  border: 1px solid #475569;
+  border-radius: 12px;
+  background: #334155;
+  color: #f8fafc;
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.1), transparent);
+    transition: left 0.5s ease;
+  }
   
   &:hover:not(:disabled) {
-    background: #f8f9fa;
-    border-color: #ccc;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    background: #475569;
+    border-color: #6366f1;
+    transform: translateY(-2px);
+    box-shadow: 
+      0 10px 25px rgba(0, 0, 0, 0.3),
+      0 0 0 1px rgba(99, 102, 241, 0.2);
+    
+    &::before {
+      left: 100%;
+    }
   }
   
   &:active:not(:disabled) {
     transform: translateY(0);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 
+      0 5px 15px rgba(0, 0, 0, 0.2),
+      0 0 0 1px rgba(99, 102, 241, 0.3);
   }
   
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+    transform: none;
   }
   
   &.loading {
     animation: pulse 2s infinite;
+    
+    svg {
+      animation: spin 1s linear infinite;
+    }
   }
   
   svg {
     flex-shrink: 0;
+    transition: transform 0.3s ease;
   }
 }
 
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 .error-message {
-  margin-top: 1rem;
-  padding: 0.75rem;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  border-radius: 6px;
-  color: #dc2626;
-  font-size: 0.875rem;
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  color: #fca5a5;
+  font-size: 0.9rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  
+  &::before {
+    content: '⚠️';
+    font-size: 1rem;
+  }
 }
 
 .auth-footer {
-  color: #888;
+  color: #94a3b8;
   font-size: 0.875rem;
+  font-weight: 400;
   
   p {
     margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    
+    &::before {
+      content: '🔒';
+      font-size: 1rem;
+    }
   }
 }
 
@@ -106,5 +253,53 @@
   }
   50% {
     opacity: 0.7;
+  }
+}
+
+/* Additional terminal-inspired elements */
+.auth-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #6366f1, #8b5cf6, #06b6d4);
+  border-radius: 16px 16px 0 0;
+}
+
+/* Responsive design */
+@media (max-width: 480px) {
+  .auth-card {
+    padding: 2rem 1.5rem;
+    margin: 0.5rem;
+  }
+  
+  .auth-header h1 {
+    font-size: 2rem;
+  }
+  
+  .google-signin-btn {
+    padding: 0.875rem 1rem;
+    font-size: 0.95rem;
+  }
+}
+
+/* Loading state improvements */
+.google-signin-btn.loading {
+  pointer-events: none;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 1rem;
+    width: 16px;
+    height: 16px;
+    border: 2px solid transparent;
+    border-top: 2px solid #6366f1;
+    border-radius: 50%;
+    transform: translateY(-50%);
+    animation: spin 1s linear infinite;
   }
 }

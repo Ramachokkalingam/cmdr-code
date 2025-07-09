@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 import firebase_admin
 from firebase_admin import credentials, auth
 from .database import engine, Base
-from .routers import auth_router, sessions_router, ai_router
+from .routers import auth_router, sessions_router, ai_router, settings_router
 from .routers.updates import router as updates_router
 from .config import settings
 import os
@@ -45,6 +45,7 @@ app.add_middleware(
 app.include_router(auth_router, prefix="/api/auth", tags=["authentication"])
 app.include_router(sessions_router, prefix="/api/sessions", tags=["sessions"])
 app.include_router(ai_router, prefix="/api/ai", tags=["ai-assistant"])
+app.include_router(settings_router, prefix="/api/settings", tags=["settings"])
 app.include_router(updates_router, prefix="/api")
 
 @app.get("/")

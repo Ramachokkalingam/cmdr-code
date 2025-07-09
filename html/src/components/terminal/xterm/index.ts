@@ -51,6 +51,7 @@ export interface ClientOptions {
     trzszDragInitTimeout: number;
     unicodeVersion: string;
     closeOnDisconnect: boolean;
+    defaultShell?: string;
 }
 
 export interface FlowControl {
@@ -264,15 +265,32 @@ export class Xterm {
     @bind
     private onSocketOpen() {
         console.log('[cmdr] websocket connection opened');
-
+        
         const { textEncoder, terminal, overlayAddon } = this;
+        const selectedShell = this.options.clientOptions.defaultShell || 'bash';
+        
+        // Shell paths mapping - ensure we use full paths 
+        const shellPaths = {
+            'bash': '/usr/bin/bash',
+            'sh': '/usr/bin/sh',
+            'zsh': '/usr/bin/zsh',
+            'fish': '/usr/bin/fish',
+            'pwsh': '/usr/bin/pwsh'
+        };
+        
+        // Get the full path of the shell
+        const shellPath = shellPaths[selectedShell] || selectedShell;
+        
         const msg = JSON.stringify({ 
             AuthToken: this.token, 
             columns: terminal.cols, 
             rows: terminal.rows,
-            sessionId: this.currentSessionId || 'default'
+            sessionId: this.currentSessionId || 'default',
+            defaultShell: shellPath  // Use the full path
         });
         this.socket?.send(textEncoder.encode(msg));
+        
+        console.log(`[cmdr] Using shell: ${shellPath}`);
 
         if (this.opened) {
             terminal.reset();
@@ -280,6 +298,11 @@ export class Xterm {
             overlayAddon.showOverlay(this.currentSessionId ? `Session: ${this.currentSessionId}` : 'Reconnected', 300);
         } else {
             this.opened = true;
+            // Show information about the shell
+            // setTimeout(() => {
+            //     terminal.write(`\r\n\x1b[36mSetting preferred shell: ${selectedShell} (${shellPath})\x1b[0m\r\n`);
+            //     terminal.write(`\x1b[33mNote: For guaranteed shell selection, restart with: ./cmdr -W ${shellPath}\x1b[0m\r\n\n`);
+            // }, 1000);
         }
 
         this.doReconnect = this.reconnect;

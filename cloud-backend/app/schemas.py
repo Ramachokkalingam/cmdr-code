@@ -116,3 +116,123 @@ class ClientVersion(BaseModel):
     
     class Config:
         from_attributes = True
+
+# Settings schemas
+class FontSettingsSchema(BaseModel):
+    family: str = "JetBrains Mono"
+    size: int = 13
+    weight: str = "normal"
+    lineHeight: float = 1.2
+
+class ColorThemeSchema(BaseModel):
+    name: str
+    displayName: str
+    colors: dict
+    opacity: Optional[float] = None
+
+class TerminalBehaviorSettingsSchema(BaseModel):
+    scrollbackSize: int = 5000
+    bellSound: bool = True
+    copyOnSelection: bool = False
+    pasteOnRightClick: bool = True
+    wordWrap: bool = True
+    tabCompletion: bool = True
+    cursorStyle: str = "block"
+    cursorBlink: bool = True
+
+class UISettingsSchema(BaseModel):
+    showSessionSidebar: bool = True
+    aiBarAutoOpen: bool = False
+    aiBarPosition: str = "bottom"
+    terminalPadding: int = 8
+    terminalMargins: int = 0
+    fullScreenMode: bool = False
+
+class KeyboardShortcutSchema(BaseModel):
+    id: str
+    name: str
+    description: str
+    key: str
+    modifiers: dict
+    enabled: bool = True
+
+class ConnectionSettingsSchema(BaseModel):
+    autoReconnect: bool = True
+    reconnectInterval: int = 5000
+    connectionTimeout: int = 30000
+    websocketPingInterval: int = 30000
+
+class PerformanceSettingsSchema(BaseModel):
+    renderingOptimization: str = "balanced"
+    bufferSize: int = 1000
+    frameRateLimit: int = 60
+    enableWebGL: bool = True
+    enableCanvas: bool = True
+
+class SecuritySettingsSchema(BaseModel):
+    rememberCredentials: bool = True
+    sessionTimeout: int = 3600000
+    twoFactorEnabled: bool = False
+    clearHistoryOnExit: bool = False
+    disableCommandLogging: bool = False
+    incognitoMode: bool = False
+
+class AISettingsSchema(BaseModel):
+    defaultModel: str = "gpt-4"
+    responseLength: str = "medium"
+    autoSuggest: bool = True
+    contextAwareness: int = 5
+    showSuggestions: bool = True
+    responseFormatting: str = "markdown"
+
+class SessionSettingsSchema(BaseModel):
+    saveSessionState: bool = True
+    autoRestoreSessions: bool = True
+    sessionHistoryLimit: int = 10
+    autoExportLogs: bool = False
+
+class DeveloperSettingsSchema(BaseModel):
+    debugMode: bool = False
+    consoleLoggingLevel: str = "info"
+    performanceMonitoring: bool = False
+    websocketInspection: bool = False
+
+class AccessibilitySettingsSchema(BaseModel):
+    highContrast: bool = False
+    screenReaderSupport: bool = False
+    keyboardOnlyNavigation: bool = False
+    textScaling: float = 1.0
+    announceCommands: bool = False
+
+class CmdrSettingsSchema(BaseModel):
+    version: str = "1.0.0"
+    font: FontSettingsSchema
+    theme: ColorThemeSchema
+    terminalBehavior: TerminalBehaviorSettingsSchema
+    ui: UISettingsSchema
+    keyboardShortcuts: List[KeyboardShortcutSchema]
+    connection: ConnectionSettingsSchema
+    performance: PerformanceSettingsSchema
+    security: SecuritySettingsSchema
+    ai: AISettingsSchema
+    session: SessionSettingsSchema
+    developer: DeveloperSettingsSchema
+    accessibility: AccessibilitySettingsSchema
+
+class UserSettingsBase(BaseModel):
+    settings_data: dict
+
+class UserSettingsCreate(UserSettingsBase):
+    pass
+
+class UserSettingsUpdate(BaseModel):
+    settings_data: Optional[dict] = None
+
+class UserSettings(UserSettingsBase):
+    id: str
+    user_id: str
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    
+    class Config:
+        from_attributes = True

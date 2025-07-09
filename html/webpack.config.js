@@ -1,102 +1,94 @@
 const path = require('path');
-const { merge } = require('webpack-merge');
-const ESLintPlugin = require('eslint-webpack-plugin');
-const CopyWebpackPlugin = require('copy-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
-const devMode = process.env.NODE_ENV !== 'production';
+const isProduction = process.env.NODE_ENV === 'production';
 
-const baseConfig = {
-    context: path.resolve(__dirname, 'src'),
-    entry: {
-        app: './index.tsx',
-    },
-    output: {
-        path: path.resolve(__dirname, 'dist'),
-        filename: devMode ? '[name].js' : '[name].[contenthash].js',
-    },
-    module: {
-        rules: [
-            {
-                test: /\.tsx?$/,
-                use: 'ts-loader',
-                exclude: /node_modules/,
-            },
-            {
-                test: /\.s?[ac]ss$/,
-                use: [devMode ? 'style-loader' : MiniCssExtractPlugin.loader, 'css-loader', 'sass-loader'],
-            },
-        ],
-    },
-    resolve: {
-        extensions: ['.tsx', '.ts', '.js'],
-    },
-    plugins: [
-        // Temporarily disabled ESLint to fix build issues
-        // new ESLintPlugin({
-        //     context: path.resolve(__dirname, '.'),
-        //     extensions: ['js', 'jsx', 'ts', 'tsx'],
-        // }),
-        new CopyWebpackPlugin({
-            patterns: [{ from: './favicon.png', to: '.' }],
-        }),
-        new MiniCssExtractPlugin({
-            filename: devMode ? '[name].css' : '[name].[contenthash].css',
-            chunkFilename: devMode ? '[id].css' : '[id].[contenthash].css',
-        }),
-        new HtmlWebpackPlugin({
-            inject: false,
-            minify: {
-                removeComments: true,
-                collapseWhitespace: true,
-            },
-            title: 'cmdr - Terminal',
-            template: './template.html',
-        }),
-    ],
-    performance: {
-        hints: false,
-    },
-};
+module.exports = {
+  mode: isProduction ? 'production' : 'development',
+  entry: {
+    main: './src/index.tsx',
+  },
+  
+  resolve: {
+    extensions: ['.tsx', '.ts', '.js', '.jsx'],
+    alias: {
+      'react': 'preact/compat',
+      'react-dom': 'preact/compat',
+      'build': path.resolve(__dirname, 'dist') // Add an alias for 'build' to resolve to the dist directory
+    }
+  },
 
-const devConfig = {
-    mode: 'development',
-    devServer: {
-        static: path.join(__dirname, 'dist'),
-        compress: true,
-        port: 9000,
-        client: {
-            overlay: {
-                errors: true,
-                warnings: false,
-            },
-        },
-        proxy: [
-            {
-                context: ['/token', '/ws'],
-                target: 'http://localhost:6969',
-                ws: true,
-            },
-        ],
-        webSocketServer: {
-            type: 'sockjs',
+  module: {
+    rules: [
+      {
+        test: /\.tsx?$/,
+        use: 'ts-loader',
+        exclude: /node_modules/,
+      },
+      {
+        test: /\.s?css$/,
+        use: [
+          isProduction ? MiniCssExtractPlugin.loader : 'style-loader',
+          'css-loader',
+          {
+            loader: 'sass-loader',
             options: {
-                path: '/sockjs-node',
-            },
-        },
-    },
-    devtool: 'inline-source-map',
-};
+              sassOptions: {
+                silenceDeprecations: ['legacy-js-api', 'import']
+              }
+            }
+          }
+        ],
+      },
+    ],
+  },
 
-const prodConfig = {
-    mode: 'production',
-    optimization: {
-        minimizer: [new TerserPlugin(), new CssMinimizerPlugin()],
-    },
-    devtool: 'source-map',
-};
+  plugins: [
+    new HtmlWebpackPlugin({
+      template: 'src/template.html',
+      filename: 'index.html',
+      excludeChunks: ['build'], // Exclude any chunk named 'build'
+      title: 'CMDR Terminal'
+    }),
+    new CopyWebpackPlugin({
+      patterns: [
+        { from: 'src/favicon.png', to: 'favicon.png' }
+      ]
+    }),
+    ...(isProduction ? [
+      new MiniCssExtractPlugin({
+        filename: '[name].[contenthash].css',
+      })
+    ] : [])
+  ],
 
-module.exports = merge(baseConfig, devMode ? devConfig : prodConfig);
+  output: {
+    filename: isProduction ? '[name].[contenthash].js' : '[name].js',
+    path: path.resolve(__dirname, 'dist'),
+    clean: true,
+  },
+
+  optimization: {
+    minimize: isProduction,
+    minimizer: [
+      new TerserPlugin(),
+      new CssMinimizerPlugin(),
+    ],
+  },
+
+  devServer: {
+    static: {
+      directory: path.join(__dirname, 'public'),
+    },
+    compress: true,
+    port: 9000,
+    hot: true,
+    historyApiFallback: true,
+  },
+
+  devtool: isProduction ? 'source-map' : 'eval-source-map',
+};

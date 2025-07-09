@@ -118,10 +118,17 @@ done:
 
 static char **build_args(struct pss_tty *pss) {
   int i, n = 0;
-  char **argv = xmalloc((server->argc + pss->argc + 1) * sizeof(char *));
-
-  for (i = 0; i < server->argc; i++) {
-    argv[n++] = server->argv[i];
+  char **argv;
+  
+  // If user specified a shell, use it instead of server command
+  if (strlen(pss->default_shell) > 0) {
+    argv = xmalloc((1 + pss->argc + 1) * sizeof(char *));
+    argv[n++] = strdup(pss->default_shell);
+  } else {
+    argv = xmalloc((server->argc + pss->argc + 1) * sizeof(char *));
+    for (i = 0; i < server->argc; i++) {
+      argv[n++] = server->argv[i];
+    }
   }
 
   for (i = 0; i < pss->argc; i++) {
@@ -241,6 +248,8 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
       pss->authenticated = false;
       pss->wsi = wsi;
       pss->lws_close_status = LWS_CLOSE_STATUS_NOSTATUS;
+      // Initialize default shell to empty (will be set from JSON message)
+      pss->default_shell[0] = '\0';
 
       if (server->url_arg) {
         while (lws_hdr_copy_fragment(wsi, buf, sizeof(buf), WSI_TOKEN_HTTP_URI_ARGS, n++) > 0) {
@@ -404,6 +413,21 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
                   server->persistent_registry, "default", pss, wsi, cwd);
               if (cwd) free(cwd);
             }
+          }
+          
+          // Parse defaultShell if provided
+          struct json_object *shell_obj = NULL;
+          if (json_object_object_get_ex(obj, "defaultShell", &shell_obj)) {
+            const char *shell_path = json_object_get_string(shell_obj);
+            if (shell_path != NULL && strlen(shell_path) > 0) {
+              strncpy(pss->default_shell, shell_path, sizeof(pss->default_shell) - 1);
+              pss->default_shell[sizeof(pss->default_shell) - 1] = '\0';
+              lwsl_notice("Default shell set to: %s\n", pss->default_shell);
+            } else {
+              strcpy(pss->default_shell, "/usr/bin/bash"); // fallback to bash
+            }
+          } else {
+            strcpy(pss->default_shell, "/usr/bin/bash"); // fallback to bash
           }
           
           json_object_put(obj);

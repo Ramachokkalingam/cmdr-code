@@ -1,3 +1,27 @@
+// CSS Custom Properties for Theming
+:root {
+  // Default CMDR Dark Theme
+  --color-primary: #6366f1;
+  --color-secondary: #8b5cf6;
+  --color-accent: #06b6d4;
+  --color-background: #0f172a;
+  --color-surface: #1e293b;
+  --color-text: #f8fafc;
+  --color-text-secondary: #cbd5e1;
+  --color-border: #475569;
+  --color-error: #ef4444;
+  --color-success: #22c55e;
+  
+  // Terminal colors
+  --terminal-background: #1e293b;
+  --terminal-foreground: #f8fafc;
+  --terminal-cursor: #06b6d4;
+  
+  // Font settings
+  --terminal-font-size: 13px;
+  --terminal-font-family: 'JetBrains Mono', 'Consolas', 'Liberation Mono', 'Menlo', 'Courier', monospace;
+}
+
 // Import the new session sidebar styles
 @import '../components/session-sidebar/session-sidebar.scss';
 
@@ -9,9 +33,9 @@
 body {
   margin: 0;
   padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-  background: #171717;
-  color: #ececf1;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  background: var(--color-background);
+  color: var(--color-text);
   overflow: hidden;
 }
 
@@ -19,9 +43,25 @@ body {
 .app-container {
   display: flex;
   height: 100vh;
-  background: #171717;
-  color: #ececf1;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  background: var(--color-background);
+  color: var(--color-text);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  position: relative;
+
+  // Add subtle background pattern
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+      radial-gradient(ellipse at top, rgba(99, 102, 241, 0.08), transparent),
+      radial-gradient(ellipse at bottom, rgba(139, 92, 246, 0.05), transparent);
+    pointer-events: none;
+    z-index: 0;
+  }
 
   &.loading {
     justify-content: center;
@@ -34,8 +74,10 @@ body {
     display: flex;
     flex-direction: column;
     margin-left: 260px;
-    transition: margin-left 0.2s ease;
+    transition: margin-left 0.3s ease;
     overflow: hidden;
+    position: relative;
+    z-index: 1;
   }
   
   &.sidebar-collapsed .main-content {
@@ -49,17 +91,41 @@ body {
   align-items: center;
   justify-content: center;
   height: 100vh;
-  background: #171717;
-  color: #ececf1;
+  background: var(--color-background);
+  background-image: 
+    radial-gradient(ellipse at center, rgba(99, 102, 241, 0.1), transparent),
+    radial-gradient(ellipse at bottom, rgba(139, 92, 246, 0.08), transparent);
+  color: var(--color-text);
   
   .loading-spinner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
     font-size: 18px;
+    font-weight: 500;
+    
+    &::before {
+      content: '';
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(99, 102, 241, 0.2);
+      border-top: 3px solid var(--color-primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
     
     &::after {
-      content: '...';
-      animation: loading-dots 1.5s infinite;
+      content: 'Loading CMDR...';
+      margin-top: 0.5rem;
+      color: var(--color-text-secondary);
     }
   }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 @keyframes loading-dots {
@@ -81,19 +147,32 @@ body {
 #terminal-container {
   flex: 1;
   position: relative;
+  background: var(--terminal-background);
+  border-radius: 8px 8px 0 0;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-bottom: none;
   
   .xterm {
     height: 100%;
     width: 100%;
+    background: transparent;
+    font-size: var(--terminal-font-size);
+    font-family: var(--terminal-font-family);
   }
   
   .xterm-viewport {
     background: transparent !important;
   }
+
+  .xterm-screen {
+    background: var(--terminal-background) !important;
+  }
 }
 
 // AI Bar adjustments for new layout
 .ai-bar {
-  border-bottom: 1px solid #2f2f2f;
-  background: #1a1a1a;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  backdrop-filter: blur(10px);
 }

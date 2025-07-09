@@ -45,6 +45,7 @@ struct pss_tty {
   char address[50];
   char path[128];
   char session_id[64];  // Session ID for ChatGPT-style session management
+  char default_shell[256]; // User-selected shell path
   char **args;
   int argc;
 

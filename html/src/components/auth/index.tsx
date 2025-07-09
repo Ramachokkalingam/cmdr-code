@@ -39,7 +39,7 @@ export function Login({ onAuthSuccess }: AuthProps) {
             <div className="auth-card">
                 <div className="auth-header">
                     <h1>Welcome to CMDR</h1>
-                    <p>Terminal sharing made simple</p>
+                    <p>AI-powered terminal in your browser</p>
                 </div>
 
                 <div className="auth-content">
@@ -73,7 +73,7 @@ export function Login({ onAuthSuccess }: AuthProps) {
                 </div>
 
                 <div className="auth-footer">
-                    <p>Secure authentication powered by Firebase</p>
+                    <p>Secure authentication with intelligent session management</p>
                 </div>
             </div>
         </div>
