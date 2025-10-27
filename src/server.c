@@ -354,6 +354,11 @@ int main(int argc, char **argv) {
   int start = calc_command_start(argc, argv);
   server = server_new(argc, argv, start);
 
+  // Initialize updater system
+  if (!server_init_updater(server)) {
+    lwsl_warn("Failed to initialize updater system\n");
+  }
+
   struct lws_context_creation_info info;
   memset(&info, 0, sizeof(info));
   info.port = 6969;

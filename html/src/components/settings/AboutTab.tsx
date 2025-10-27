@@ -1,21 +1,74 @@
 import { h, Component } from 'preact';
-import { CmdrSettings } from '../../types/settings';
+import { getUpdateService } from '../../services/UpdateService';
 
 interface AboutTabProps {
-    updateCheckStatus: 'idle' | 'checking' | 'success' | 'error';
-    lastUpdateCheck: string | null;
-    onGitUpdate: () => void;
-    onGitStatus: () => void;
+    websocket?: WebSocket;
 }
 
-export class AboutTab extends Component<AboutTabProps> {
+interface AboutTabState {
+    updateStatus: 'idle' | 'checking' | 'downloading' | 'installing' | 'success' | 'error';
+    updateMessage: string;
+    latestVersion?: string;
+}
+
+export class AboutTab extends Component<AboutTabProps, AboutTabState> {
+    constructor(props: AboutTabProps) {
+        super(props);
+        this.state = {
+            updateStatus: 'idle',
+            updateMessage: 'Check for updates from our secure cloud backend.',
+        };
+    }
+    
+    handleCheckForUpdates = () => {
+        if (this.props.websocket) {
+            try {
+                const updateService = getUpdateService(this.props.websocket);
+                this.setState({ updateStatus: 'checking', updateMessage: 'Checking for updates from cloud backend...' });
+                updateService.checkForUpdates();
+            } catch (error) {
+                console.error('Error initializing update service:', error);
+                this.setState({ 
+                    updateStatus: 'error', 
+                    updateMessage: 'Failed to initialize update service. Please check console for details.' 
+                });
+            }
+        } else {
+            this.setState({ 
+                updateStatus: 'error', 
+                updateMessage: 'No WebSocket connection available for updates.' 
+            });
+        }
+    }
+    
     render() {
-        const { updateCheckStatus, lastUpdateCheck, onGitUpdate, onGitStatus } = this.props;
+        const { updateStatus, updateMessage, latestVersion } = this.state;
         
         try {
-            const appVersion = '1.0.0';
-            const buildDate = '2025-07-08';
-            const currentYear = 2025;
+            // Get actual version from package or build info - safely access process.env
+            let appVersion = '1.7.3';
+            let buildDate = new Date().toISOString().split('T')[0];
+            
+            // Try to get environment variables safely
+            try {
+                if (typeof process !== 'undefined' && process.env) {
+                    appVersion = process.env.APP_VERSION || appVersion;
+                    buildDate = process.env.BUILD_DATE || buildDate;
+                }
+            } catch (envError) {
+                console.log('Environment variables not available:', envError);
+            }
+            
+            // Safe browser API access
+            let platform = 'Web Browser';
+            let language = 'English'; 
+            let isOnline = 'Yes';
+            
+            if (typeof window !== 'undefined' && typeof navigator !== 'undefined') {
+                platform = navigator.platform || 'Web Browser';
+                language = navigator.language || 'English';
+                isOnline = navigator.onLine ? 'Yes' : 'No';
+            }
             
             return (
                 <div className="settings-tab-content">
@@ -37,36 +90,35 @@ export class AboutTab extends Component<AboutTabProps> {
                             <h4>Update Management</h4>
                             <div className="update-checker-section">
                                 <div className="update-status">
-                                    {updateCheckStatus === 'idle' && (
-                                        <p>Pull latest changes from GitHub repository.</p>
+                                    {updateStatus === 'idle' && !latestVersion && (
+                                        <p>Updates are delivered securely through our cloud backend.</p>
                                     )}
-                                    {updateCheckStatus === 'checking' && (
-                                        <p>🔄 Updating from GitHub...</p>
+                                    {updateStatus === 'idle' && latestVersion && (
+                                        <p>🎉 {updateMessage}</p>
                                     )}
-                                    {updateCheckStatus === 'success' && (
-                                        <p>✅ Update successful!</p>
+                                    {updateStatus === 'checking' && (
+                                        <p>🔄 {updateMessage}</p>
                                     )}
-                                    {updateCheckStatus === 'error' && (
-                                        <p>❌ Update failed. Please try again.</p>
+                                    {updateStatus === 'downloading' && (
+                                        <p>⬇️ Downloading update from cloud...</p>
                                     )}
-                                    {lastUpdateCheck && (
-                                        <p>Last checked: {new Date(lastUpdateCheck).toLocaleString()}</p>
+                                    {updateStatus === 'installing' && (
+                                        <p>⚙️ Installing update...</p>
+                                    )}
+                                    {updateStatus === 'success' && (
+                                        <p>✅ Update completed successfully!</p>
+                                    )}
+                                    {updateStatus === 'error' && (
+                                        <p>❌ Update failed. Please try again or contact support.</p>
                                     )}
                                 </div>
                                 <div className="update-actions">
                                     <button 
                                         className="btn btn-primary"
-                                        onClick={onGitUpdate}
-                                        disabled={updateCheckStatus === 'checking'}
+                                        onClick={this.handleCheckForUpdates}
+                                        disabled={updateStatus === 'checking' || updateStatus === 'downloading' || updateStatus === 'installing'}
                                     >
-                                        <i className="fas fa-download"></i> Update from GitHub
-                                    </button>
-                                    <button 
-                                        className="btn btn-secondary"
-                                        onClick={onGitStatus}
-                                        style={{ marginLeft: '10px' }}
-                                    >
-                                        <i className="fas fa-info-circle"></i> Git Status
+                                        <i className="fas fa-sync-alt"></i> Check for Updates
                                     </button>
                                 </div>
                             </div>
@@ -75,32 +127,46 @@ export class AboutTab extends Component<AboutTabProps> {
                         <div className="settings-section">
                             <h4>System Information</h4>
                             <div className="system-info">
-                                <p><strong>Platform:</strong> Web Browser</p>
-                                <p><strong>Language:</strong> English</p>
-                                <p><strong>Online:</strong> Yes</p>
+                                <p><strong>Platform:</strong> {platform}</p>
+                                <p><strong>Language:</strong> {language}</p>
+                                <p><strong>Online:</strong> {isOnline}</p>
+                                <p><strong>Update Channel:</strong> Production</p>
                             </div>
                         </div>
                         
                         <div className="settings-section">
-                            <h4>Links</h4>
+                            <h4>Support & Contact</h4>
                             <div className="app-links">
-                                <a href="https://github.com/yourusername/cmdr" target="_blank" rel="noopener noreferrer">
-                                    <i className="fab fa-github"></i> Source Code
+                                <a href="mailto:support@cmdr.app" target="_blank" rel="noopener noreferrer">
+                                    <i className="fas fa-envelope"></i> Contact Support
                                 </a>
-                                <a href="https://github.com/yourusername/cmdr/issues" target="_blank" rel="noopener noreferrer">
-                                    <i className="fas fa-bug"></i> Report Issues
-                                </a>
-                                <a href="https://github.com/yourusername/cmdr/blob/main/README.md" target="_blank" rel="noopener noreferrer">
+                                <a href="https://cmdr.app/docs" target="_blank" rel="noopener noreferrer">
                                     <i className="fas fa-book"></i> Documentation
                                 </a>
+                                <a href="https://cmdr.app/status" target="_blank" rel="noopener noreferrer">
+                                    <i className="fas fa-server"></i> Service Status
+                                </a>
                             </div>
                         </div>
                         
                         <div className="settings-section">
-                            <h4>License</h4>
-                            <p>CMDR is open source software released under the MIT License.</p>
-                            <p className="text-secondary">
-                                Copyright © {currentYear} CMDR Contributors. All rights reserved.
+                            <h4>Legal & Licensing</h4>
+                            <p>CMDR is proprietary software developed for secure terminal sharing.</p>
+                            <div className="legal-links">
+                                <a href="https://cmdr.app/terms" target="_blank" rel="noopener noreferrer">
+                                    Terms of Service
+                                </a>
+                                <span> | </span>
+                                <a href="https://cmdr.app/privacy" target="_blank" rel="noopener noreferrer">
+                                    Privacy Policy
+                                </a>
+                                <span> | </span>
+                                <a href="https://cmdr.app/license" target="_blank" rel="noopener noreferrer">
+                                    Software License
+                                </a>
+                            </div>
+                            <p className="text-secondary" style={{ marginTop: '10px' }}>
+                                Copyright © {new Date().getFullYear()} CMDR Technologies. All rights reserved.
                             </p>
                         </div>
                     </div>
@@ -108,11 +174,24 @@ export class AboutTab extends Component<AboutTabProps> {
             );
         } catch (error) {
             console.error('Error rendering About tab:', error);
+            console.error('Error details:', {
+                message: error instanceof Error ? error.message : 'Unknown error',
+                stack: error instanceof Error ? error.stack : 'No stack trace',
+                props: this.props,
+                state: this.state
+            });
             return (
                 <div className="settings-tab-content">
                     <h3>About CMDR</h3>
                     <div className="settings-section">
-                        <p>Error loading about information.</p>
+                        <p>Error loading about information. Please refresh the page.</p>
+                        <button 
+                            className="btn btn-primary" 
+                            onClick={() => typeof window !== 'undefined' && window.location && window.location.reload()}
+                            style={{ marginTop: '10px' }}
+                        >
+                            Refresh Page
+                        </button>
                     </div>
                 </div>
             );

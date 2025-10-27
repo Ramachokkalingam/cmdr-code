@@ -101,6 +101,7 @@ interface AppState {
     currentTheme: string;
     settingsVisible: boolean;
     aiBarVisible: boolean;
+    webSocket: WebSocket | null;
 }
 
 export class App extends Component<{}, AppState> {
@@ -114,6 +115,7 @@ export class App extends Component<{}, AppState> {
             currentTheme: localStorage.getItem('cmdr-theme') || 'cmdr-dark',
             settingsVisible: false,
             aiBarVisible: false,
+            webSocket: null,
         };
     }
 
@@ -605,6 +607,16 @@ export class App extends Component<{}, AppState> {
         }
     }
 
+    handleWebSocketConnect = (webSocket: WebSocket) => {
+        this.setState({ webSocket });
+        console.log('[App] WebSocket connected for update service');
+    };
+
+    handleWebSocketDisconnect = () => {
+        this.setState({ webSocket: null });
+        console.log('[App] WebSocket disconnected from update service');
+    };
+
     render() {
         const { user, loading, activeSessionId, sidebarCollapsed, currentTheme, settingsVisible, aiBarVisible } = this.state;
 
@@ -623,6 +635,7 @@ export class App extends Component<{}, AppState> {
         return (
             <div class={`app-container ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
                 <UpdateChecker 
+                    webSocket={this.state.webSocket}
                     disabled={process.env.NODE_ENV === 'development'}
                     checkInterval={3600000} // 1 hour
                 />
@@ -645,6 +658,8 @@ export class App extends Component<{}, AppState> {
                         termOptions={termOptions}
                         flowControl={flowControl}
                         sessionId={activeSessionId || undefined}
+                        onWebSocketConnect={this.handleWebSocketConnect}
+                        onWebSocketDisconnect={this.handleWebSocketDisconnect}
                     />
                 </div>
                 <Settings
@@ -655,6 +670,7 @@ export class App extends Component<{}, AppState> {
                     onFontSizeChange={this.handleFontSizeChange}
                     onFontFamilyChange={this.handleFontFamilyChange}
                     onPreferenceChange={this.handlePreferenceChange}
+                    websocket={this.state.webSocket || undefined}
                 />
             </div>
         );

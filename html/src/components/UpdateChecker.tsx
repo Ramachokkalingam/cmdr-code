@@ -1,26 +1,35 @@
 import { h, FunctionalComponent } from 'preact';
 import { useState, useEffect, useRef } from 'preact/hooks';
-import { UpdateInfo, updateService } from '../services/updateService';
-import { UpdateModal } from './UpdateModal';
+import { UpdateNotification } from './UpdateNotification';
+import { getUpdateService } from '../services/UpdateService';
 
 interface UpdateCheckerProps {
+    webSocket: WebSocket | null;
     checkInterval?: number; // in milliseconds, default 1 hour
     disabled?: boolean; // disable update checking entirely
 }
 
 export const UpdateChecker: FunctionalComponent<UpdateCheckerProps> = ({ 
+    webSocket,
     checkInterval = 3600000, // 1 hour
     disabled = false
 }) => {
-    const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
-    const [showModal, setShowModal] = useState(false);
     const [isChecking, setIsChecking] = useState(false);
+    const updateService = useRef(getUpdateService()).current;
     
     // Use ref to track last check time to avoid stale closures
     const lastCheckTimeRef = useRef<number>(0);
 
+    useEffect(() => {
+        if (webSocket) {
+            updateService.setWebSocket(webSocket);
+        }
+    }, [webSocket, updateService]);
+
     const checkForUpdates = async (showNotification = false) => {
-        if (isChecking || disabled) return;
+        if (isChecking || disabled || !webSocket || webSocket.readyState !== WebSocket.OPEN) {
+            return;
+        }
         
         // Prevent too frequent checks (minimum 30 seconds between checks)
         const now = Date.now();
@@ -32,26 +41,21 @@ export const UpdateChecker: FunctionalComponent<UpdateCheckerProps> = ({
         try {
             console.debug('[UpdateChecker] Starting update check...');
             setIsChecking(true);
-            const update = await updateService.checkForUpdates();
             
-            if (update) {
-                console.debug('[UpdateChecker] Update available:', update);
-                setUpdateInfo(update);
-                setShowModal(true);
-                
-                if (showNotification && 'Notification' in window) {
-                    try {
-                        const permission = await Notification.requestPermission();
-                        if (permission === 'granted') {
-                            new Notification('CMDR Update Available', {
-                                body: `Version ${update.version} is now available`,
-                                icon: '/favicon.png',
-                                tag: 'cmdr-update'
-                            });
-                        }
-                    } catch (err) {
-                        console.log('Notification not supported or permission denied');
+            const hasUpdate = await updateService.checkForUpdates();
+            
+            if (hasUpdate && showNotification && 'Notification' in window) {
+                try {
+                    const permission = await Notification.requestPermission();
+                    if (permission === 'granted') {
+                        new Notification('CMDR Update Available', {
+                            body: 'A new version is now available',
+                            icon: '/favicon.png',
+                            tag: 'cmdr-update'
+                        });
                     }
+                } catch (err) {
+                    console.log('Notification not supported or permission denied');
                 }
             }
             
@@ -64,10 +68,12 @@ export const UpdateChecker: FunctionalComponent<UpdateCheckerProps> = ({
     };
 
     useEffect(() => {
-        if (disabled) return;
+        if (disabled || !webSocket) return;
         
-        // Check for updates on component mount
-        checkForUpdates();
+        // Check for updates 10 seconds after WebSocket connection
+        const initialTimeout = setTimeout(() => {
+            checkForUpdates();
+        }, 10000);
 
         // Set up periodic checking
         const interval = setInterval(() => {
@@ -84,39 +90,33 @@ export const UpdateChecker: FunctionalComponent<UpdateCheckerProps> = ({
         document.addEventListener('visibilitychange', handleVisibilityChange);
 
         return () => {
+            clearTimeout(initialTimeout);
             clearInterval(interval);
             document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
-    }, [checkInterval, disabled]); // Removed lastCheckTime from dependencies
+    }, [checkInterval, disabled, webSocket]);
 
-    const handleCloseModal = () => {
-        if (updateInfo && !updateInfo.mandatory) {
-            setShowModal(false);
-        }
+    const handleUpdateStart = () => {
+        console.log('Update installation started');
     };
 
-    const handleSkipUpdate = () => {
-        if (updateInfo && !updateInfo.mandatory) {
-            setShowModal(false);
-            // Store skip preference in localStorage to avoid showing again for this version
-            localStorage.setItem(`cmdr-skip-update-${updateInfo.version}`, 'true');
+    const handleUpdateComplete = (success: boolean) => {
+        console.log('Update completed:', success ? 'success' : 'failed');
+        
+        if (success) {
+            // Show restart notification or automatically restart
+            setTimeout(() => {
+                window.location.reload();
+            }, 5000);
         }
     };
-
-    // Don't show modal if user has already skipped this version
-    const shouldShowModal = showModal && updateInfo && 
-        (updateInfo.mandatory || !localStorage.getItem(`cmdr-skip-update-${updateInfo.version}`));
 
     return (
-        <div>
-            {shouldShowModal && updateInfo && (
-                <UpdateModal
-                    updateInfo={updateInfo}
-                    onClose={handleCloseModal}
-                    onSkip={handleSkipUpdate}
-                />
-            )}
-        </div>
+        <UpdateNotification
+            webSocket={webSocket}
+            onUpdateStart={handleUpdateStart}
+            onUpdateComplete={handleUpdateComplete}
+        />
     );
 };
 

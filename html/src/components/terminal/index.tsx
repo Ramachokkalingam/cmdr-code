@@ -7,6 +7,8 @@ import '@xterm/xterm/css/xterm.css';
 interface Props extends XtermOptions {
     id: string;
     sessionId?: string;
+    onWebSocketConnect?: (webSocket: WebSocket) => void;
+    onWebSocketDisconnect?: () => void;
 }
 
 interface State {

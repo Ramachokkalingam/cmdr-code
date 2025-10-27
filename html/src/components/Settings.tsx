@@ -47,6 +47,7 @@ interface SettingsProps {
     onFontFamilyChange?: (fontFamily: string) => void;
     onPreferenceChange?: (key: string, value: boolean) => void;
     onShellChange?: (shellName: string) => void;
+    websocket?: WebSocket;
 }
 
 interface SettingsState {
@@ -421,10 +422,7 @@ export class Settings extends Component<SettingsProps, SettingsState> {
                             
                             {activeTab === 'about' && (
                                 <AboutTab 
-                                    updateCheckStatus={updateCheckStatus} 
-                                    lastUpdateCheck={lastUpdateCheck} 
-                                    onGitUpdate={this.handleGitUpdate}
-                                    onGitStatus={this.handleGitStatus}
+                                    websocket={this.props.websocket}
                                 />
                             )}
                         </div>

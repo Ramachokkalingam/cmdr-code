@@ -4,6 +4,7 @@
 #include <uv.h>
 
 #include "pty.h"
+#include "updater.h"
 
 // client message
 #define INPUT '0'
@@ -16,6 +17,8 @@
 #define OUTPUT '0'
 #define SET_WINDOW_TITLE '1'
 #define SET_PREFERENCES '2'
+#define UPDATE_STATUS '3'
+#define UPDATE_PROGRESS '4'
 
 // url paths
 struct endpoints {
@@ -121,6 +124,9 @@ struct server {
 
   // Session persistence registry
   struct session_registry *persistent_registry;
+  
+  // Update system
+  updater_ctx_t *updater;  // updater context
 };
 
 // Session management functions
@@ -137,3 +143,15 @@ void session_update_last_used(struct session_data *session);
 char* session_list_to_json(struct session_manager *mgr);
 void session_cleanup_old(struct session_manager *mgr);
 void session_delete_by_index(struct session_manager *mgr, int index);
+
+// Update system functions
+bool server_init_updater(struct server *srv);
+void server_cleanup_updater(struct server *srv);
+void server_check_updates_async(struct server *srv);
+void server_send_update_status(struct lws *wsi, const char *status, const char *message, const char *version);
+void server_send_update_progress(struct lws *wsi, int progress, const char *message);
+void server_handle_update_message(struct lws *wsi, const char *action, const char *data);
+
+// Update callbacks for WebSocket integration
+void update_progress_callback(size_t current, size_t total, void *user_data);
+void update_completion_callback(bool success, const char *message, void *user_data);

@@ -66,6 +66,8 @@ export interface XtermOptions {
     flowControl: FlowControl;
     clientOptions: ClientOptions;
     termOptions: ITerminalOptions;
+    onWebSocketConnect?: (webSocket: WebSocket) => void;
+    onWebSocketDisconnect?: () => void;
 }
 
 function toDisposable(f: () => void): IDisposable {
@@ -269,6 +271,11 @@ export class Xterm {
         const { textEncoder, terminal, overlayAddon } = this;
         const selectedShell = this.options.clientOptions.defaultShell || 'bash';
         
+        // Notify about WebSocket connection
+        if (this.options.onWebSocketConnect && this.socket) {
+            this.options.onWebSocketConnect(this.socket);
+        }
+        
         // Shell paths mapping - ensure we use full paths 
         const shellPaths = {
             'bash': '/usr/bin/bash',
@@ -313,6 +320,11 @@ export class Xterm {
     @bind
     private onSocketClose(event: CloseEvent) {
         console.log(`[cmdr] websocket connection closed with code: ${event.code}`);
+
+        // Notify about WebSocket disconnection
+        if (this.options.onWebSocketDisconnect) {
+            this.options.onWebSocketDisconnect();
+        }
 
         const { refreshToken, connect, doReconnect, overlayAddon } = this;
         overlayAddon.showOverlay('Connection Closed');

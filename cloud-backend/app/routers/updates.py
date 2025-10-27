@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Header, HTTPException, Depends
+from fastapi import APIRouter, Header, HTTPException, Depends, Query
 from fastapi.responses import FileResponse
 from ..schemas import UpdateResponse, UpdateInfo, User
 from ..auth import get_current_user
@@ -13,9 +13,157 @@ from datetime import datetime
 
 router = APIRouter(prefix="/version", tags=["updates"])
 
+# Additional router for C client compatibility
+api_router = APIRouter(prefix="/api", tags=["updates-api"])
+
 # Configuration - In production, these should come from environment variables
 RELEASES_DIR = os.getenv("RELEASES_DIR", "/app/releases")
-CURRENT_VERSION = "1.0.0"
+CURRENT_VERSION = "1.2.0"  # Updated version
+GITHUB_REPO = "Ramachokkalingam/cmdr-code"
+DOWNLOAD_BASE_URL = f"https://github.com/{GITHUB_REPO}/releases/download"
+
+# Platform mapping for C client
+PLATFORM_MAPPING = {
+    "linux": "linux-x86_64",
+    "windows": "windows-x86_64.exe", 
+    "macos": "macos-x86_64",
+    "darwin": "macos-x86_64"
+}
+
+# Mock release data for C client compatibility
+RELEASES = {
+    "1.2.0": {
+        "version": "1.2.0",
+        "releaseDate": "2025-09-14T10:00:00Z",
+        "critical": False,
+        "changelog": """## What's New in v1.2.0
+
+### Features
+- 🚀 Auto-update system implementation
+- 📱 Enhanced WebSocket protocol for real-time updates  
+- 🔐 Improved session persistence
+- 🎨 Better terminal UI with progress indicators
+
+### Bug Fixes
+- Fixed memory leaks in terminal buffer management
+- Resolved WebSocket connection issues on slow networks
+- Fixed session restoration edge cases
+
+### Performance
+- 30% faster terminal rendering
+- Reduced memory usage by 20%
+- Optimized JSON parsing
+        """,
+        "downloadSizes": {
+            "linux": 2048576,    # 2MB
+            "windows": 2359296,  # 2.25MB  
+            "macos": 2097152     # 2MB
+        },
+        "checksums": {
+            "linux": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "windows": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b856", 
+            "macos": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b857"
+        }
+    },
+    "1.1.0": {
+        "version": "1.1.0", 
+        "releaseDate": "2025-09-01T10:00:00Z",
+        "critical": False,
+        "changelog": "Previous version with basic functionality",
+        "downloadSizes": {
+            "linux": 1048576,
+            "windows": 1310720,
+            "macos": 1048576  
+        },
+        "checksums": {
+            "linux": "d3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "windows": "d3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b856",
+            "macos": "d3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b857"
+        }
+    }
+}
+
+# Add C client compatible endpoints
+@api_router.get("/test")
+async def test_endpoint():
+    """Simple test endpoint without authentication"""
+    return {"status": "working", "message": "No auth required"}
+
+@api_router.get("/version/check")
+async def check_version_c_client(
+    current_version: Optional[str] = Header(None, alias="X-Current-Version"),
+    platform: Optional[str] = Header(None, alias="X-Platform"),
+    user_agent: Optional[str] = Header(None, alias="User-Agent")
+):
+    """Check if an update is available for the C client"""
+    if not current_version:
+        raise HTTPException(400, "X-Current-Version header required")
+    
+    if not platform:
+        raise HTTPException(400, "X-Platform header required")
+    
+    # Normalize platform
+    normalized_platform = platform.lower()
+    if normalized_platform not in PLATFORM_MAPPING:
+        raise HTTPException(400, f"Unsupported platform: {platform}")
+    
+    try:
+        # Compare versions using semantic versioning
+        has_update = semver.compare(CURRENT_VERSION, current_version) > 0
+    except ValueError:
+        raise HTTPException(400, f"Invalid version format: {current_version}")
+    
+    if not has_update:
+        return {
+            "updateAvailable": False,
+            "currentVersion": current_version,
+            "latestVersion": CURRENT_VERSION,
+            "message": "You are running the latest version"
+        }
+    
+    # Get release info
+    latest_release = RELEASES.get(CURRENT_VERSION)
+    if not latest_release:
+        raise HTTPException(500, "Release information not found")
+    
+    platform_file = PLATFORM_MAPPING[normalized_platform]
+    download_url = f"{DOWNLOAD_BASE_URL}/v{CURRENT_VERSION}/cmdr-{platform_file}"
+    
+    return {
+        "updateAvailable": True,
+        "version": CURRENT_VERSION,
+        "currentVersion": current_version,
+        "downloadUrl": download_url,
+        "downloadSize": latest_release["downloadSizes"].get(normalized_platform, 0),
+        "checksum": latest_release["checksums"].get(normalized_platform),
+        "changelog": latest_release["changelog"],
+        "critical": latest_release["critical"],
+        "releaseDate": latest_release["releaseDate"],
+        "rolloutPercentage": 100
+    }
+
+@api_router.get("/version/download/{version}/{platform}")
+async def download_version_c_client(version: str, platform: str):
+    """Get download information for C client"""
+    if version not in RELEASES:
+        raise HTTPException(404, f"Version {version} not found")
+    
+    normalized_platform = platform.lower()
+    if normalized_platform not in PLATFORM_MAPPING:
+        raise HTTPException(400, f"Unsupported platform: {platform}")
+    
+    release = RELEASES[version]
+    platform_file = PLATFORM_MAPPING[normalized_platform]
+    download_url = f"{DOWNLOAD_BASE_URL}/v{version}/cmdr-{platform_file}"
+    
+    return {
+        "version": version,
+        "platform": platform,
+        "downloadUrl": download_url,
+        "downloadSize": release["downloadSizes"].get(normalized_platform, 0),
+        "checksum": release["checksums"].get(normalized_platform),
+        "releaseDate": release["releaseDate"]
+    }
 RELEASE_CONFIG_FILE = os.path.join(RELEASES_DIR, "release-config.json")
 
 # Default release configuration

@@ -27,7 +27,7 @@ else()
     set(CMAKE_C_STANDARD 99)
 endif()
 
-set(SOURCE_FILES src/utils.c src/pty.c src/protocol.c src/http.c src/server.c src/session.c src/session_persistence.c src/updater.cpp)
+set(SOURCE_FILES src/utils.c src/pty.c src/protocol.c src/http.c src/server.c src/session.c src/session_persistence.c src/updater.c src/updater_impl.c src/updater_protocol.c)
 
 include(FindPackageHandleStandardArgs)
 

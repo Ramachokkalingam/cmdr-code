@@ -1,5 +1,6 @@
 cd /home/ram/project/terminal/cmdr/cloud-backend && source myenv/bin/activate && uvicorn app.main:app --reload
 
+sudo service postgresql start
 
 # CMDR Cloud Backend
 

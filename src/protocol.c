@@ -343,10 +343,62 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
           pty_resume(pss->process);
           break;
         case JSON_DATA:
-          if (pss->process != NULL) break;
+          // Quick check if this is an update message - allow it even with active process
+          {
+            bool is_update_message = false;
+            if (pss->len > 20) { // Minimum length for {"type":"update"}
+              char *buf_str = malloc(pss->len + 1);
+              if (buf_str) {
+                memcpy(buf_str, pss->buffer, pss->len);
+                buf_str[pss->len] = '\0';
+                if (strstr(buf_str, "\"type\":\"update\"")) {
+                  is_update_message = true;
+                }
+                free(buf_str);
+              }
+            }
+            
+            if (pss->process != NULL && !is_update_message) break;
+          }
           uint16_t columns = 0;
           uint16_t rows = 0;
           json_object *obj = parse_window_size(pss->buffer, pss->len, &columns, &rows);
+          
+          // Handle update messages
+          json_object *type_obj;
+          if (json_object_object_get_ex(obj, "type", &type_obj)) {
+            const char *type = json_object_get_string(type_obj);
+            if (type && strcmp(type, "update") == 0) {
+              json_object *action_obj;
+              if (json_object_object_get_ex(obj, "action", &action_obj)) {
+                const char *action = json_object_get_string(action_obj);
+                if (action) {
+                  lwsl_user("Received update message: action=%s\n", action);
+                  
+                  // Send immediate response that we're checking
+                  json_object *response = json_object_new_object();
+                  json_object_object_add(response, "type", json_object_new_string("update_status"));
+                  json_object_object_add(response, "status", json_object_new_string("checking"));
+                  json_object_object_add(response, "message", json_object_new_string("Checking for updates from cloud backend..."));
+                  
+                  const char *response_str = json_object_to_json_string(response);
+                  size_t response_len = strlen(response_str);
+                  unsigned char *response_buf = malloc(LWS_PRE + response_len);
+                  if (response_buf) {
+                    memcpy(response_buf + LWS_PRE, response_str, response_len);
+                    lws_write(wsi, response_buf + LWS_PRE, response_len, LWS_WRITE_TEXT);
+                    free(response_buf);
+                  }
+                  json_object_put(response);
+                  
+                  // Handle the update request
+                  server_handle_update_message(wsi, action, NULL);
+                }
+              }
+              json_object_put(obj);
+              break; // Exit early for update messages
+            }
+          }
           if (server->credential != NULL) {
             struct json_object *o = NULL;
             if (json_object_object_get_ex(obj, "AuthToken", &o)) {
