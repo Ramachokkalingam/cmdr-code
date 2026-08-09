@@ -4,8 +4,13 @@ from fastapi import APIRouter, HTTPException
 from ..schemas import AIRequest, AIResponse
 from rich import print
 
-# Use environment variable or fallback to hardcoded API key (for dev only)
-GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY", "AIzaSyAHuUAU4UWCr7GGjc0wSF7FOwK_PCj79nM")
+# Required: no fallback. A committed key would be public the moment it is pushed.
+GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
+if not GOOGLE_API_KEY:
+    raise RuntimeError(
+        "GOOGLE_API_KEY is not set. Export it or add it to cloud-backend/.env "
+        "(see .env.example). The AI endpoint cannot start without it."
+    )
 
 # Gemini model setup
 genai.configure(api_key=GOOGLE_API_KEY)

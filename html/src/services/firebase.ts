@@ -13,6 +13,10 @@ declare global {
     }
 }
 
+// These are Firebase *web* config values. Unlike a server API key they are not
+// secret — every Firebase web app ships them in its bundle, and access is
+// gated by Firebase Security Rules and the authorized-domains list, not by
+// hiding them. The window globals let the server override them per deployment.
 const firebaseConfig = {
     apiKey: window.__FIREBASE_API_KEY__ || 'AIzaSyAHkS2NfLTTJsCoHzqURtnrCPMqVApL8bk',
     authDomain: window.__FIREBASE_AUTH_DOMAIN__ || 'cmdr-terminal.firebaseapp.com',
