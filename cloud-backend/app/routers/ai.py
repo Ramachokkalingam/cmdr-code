@@ -1,7 +1,8 @@
 import os
 import google.generativeai as genai
-from fastapi import APIRouter, HTTPException
-from ..schemas import AIRequest, AIResponse
+from fastapi import APIRouter, HTTPException, Depends
+from ..schemas import AIRequest, AIResponse, User
+from ..auth import get_current_user
 from rich import print
 
 # Required: no fallback. A committed key would be public the moment it is pushed.
@@ -29,12 +30,17 @@ def ask_gemini(prompt: str) -> str:
 
 # POST /api/ai/ask endpoint
 @router.post("/ask", response_model=AIResponse)
-async def handle_ai(request_data: AIRequest):
+async def handle_ai(
+    request_data: AIRequest,
+    current_user: User = Depends(get_current_user),
+):
     user_prompt = request_data.prompt
     full_prompt = f"You are a Linux command-line assistant. {user_prompt}. Only return the exact command to run. No explanation. No alternatives."
-    
-    print(f"[cyan]→ Prompt received: {user_prompt}[/cyan]")
+
+    # Prompts are whatever the user typed into their terminal, so log only that
+    # a request happened — never the contents.
+    print(f"[cyan]→ AI request from {current_user.id} ({len(user_prompt)} chars)[/cyan]")
     result = ask_gemini(full_prompt)
-    print(f"[green]← Response: {result}[/green]")
+    print(f"[green]← AI response returned ({len(result)} chars)[/green]")
 
     return AIResponse(result=result)
