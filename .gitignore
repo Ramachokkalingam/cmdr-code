@@ -287,3 +287,6 @@ temp/
 local/
 dev/
 development/
+
+# Runtime session state written by the cmdr server
+.cmdr_sessions.json
