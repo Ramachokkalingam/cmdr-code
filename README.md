@@ -106,3 +106,18 @@ Modern browsers, See [Browser Support](https://github.com/xtermjs/xterm.js#brows
 
 * [Wetty](https://github.com/krishnasrinivas/wetty): [Node](https://nodejs.org) based web terminal (SSH/login)
 * [GoTTY](https://github.com/yudai/gotty): [Go](https://golang.org) based web terminal
+
+## Credits
+
+cmdr is built on [ttyd](https://github.com/tsl0922/ttyd) by Shuanglei Tao, which
+provides the C terminal server, the PTY layer, and the xterm.js frontend. ttyd is
+MIT licensed and that license is retained in [LICENSE](LICENSE).
+
+Added on top of ttyd in this project:
+
+* `src/session_persistence.c`, `src/session.c` — persistent terminal sessions that
+  survive disconnects
+* `src/updater*.c` — in-place update checks
+* `cloud-backend/` — FastAPI service for accounts, Firebase auth, session sync,
+  and settings
+* `html/src/components/ai-bar/` — Gemini-backed command assistant
