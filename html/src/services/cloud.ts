@@ -81,29 +81,30 @@ class CloudService {
     // AI Assistant
     async askAI(prompt: string): Promise<AIResponse> {
         try {
-            console.log('🤖 Making AI request to:', `${CLOUD_API_BASE}/ai/ask`);
-            console.log('🤖 Request payload:', { prompt });
-            
+            // The endpoint requires a Firebase ID token; without one the backend
+            // would be an open Gemini proxy for anyone who finds the URL.
+            const token = await authService.getIdToken();
+            if (!token) {
+                throw new Error('You must be signed in to use the AI assistant');
+            }
+
             // Always use cloud API for AI requests
             const response = await fetch(`${CLOUD_API_BASE}/ai/ask`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({ prompt }),
             });
 
-            console.log('🤖 Response status:', response.status, response.statusText);
-            console.log('🤖 Response ok:', response.ok);
-
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
-                console.error('🤖 Response error data:', errorData);
+                console.error('🤖 AI request failed:', response.status, errorData.detail);
                 throw new Error(errorData.detail || 'Failed to get AI response');
             }
 
             const result = await response.json();
-            console.log('🤖 Response data:', result);
             return result;
         } catch (error) {
             console.error('🤖 AI request failed:', error);
